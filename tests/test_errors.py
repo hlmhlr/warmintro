@@ -22,6 +22,7 @@ class ReadTimeout(Exception):
     (ApiError(429, "RESOURCE_EXHAUSTED"), "free API limit"),
     (ApiError(400, "API key not valid"), "GOOGLE_API_KEY"),
     (ValueError("The question is empty."), "The question is empty."),
+    (RuntimeError("Response was terminated early: MAX_TOKENS"), "length limit"),
     (MissingExtra("LLM_PROVIDER=gemini", "gemini", ImportError(name="google")),
      "uv sync --extra gemini"),
 ])

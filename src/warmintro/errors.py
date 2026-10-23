@@ -23,6 +23,9 @@ def friendly_error(error: Exception) -> str:
     if type(error).__name__ in ("ReadTimeout", "TimeoutException", "TimeoutError"):
         return "The model took too long to answer. Please try again."
 
+    if "MAX_TOKENS" in str(error):
+        return "The answer was cut off at the length limit. Try a shorter question."
+
     code = getattr(error, "code", None)  # Gemini API errors carry an HTTP code
     if code == 429:
         return "The free API limit was reached. Wait a minute and try again."

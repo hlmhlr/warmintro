@@ -49,7 +49,9 @@ def test_gemini_llm_is_created_offline_with_its_token_limit(clean_env):
     config = llm._generation_config
     # With generation_config, GoogleGenAI ignores max_tokens, so the limit
     # must be inside the config.
-    assert config["max_output_tokens"] == 77
+    # Gemini counts thinking tokens in this limit, so it gets extra room.
+    assert config["max_output_tokens"] == 77 + 1024
+    assert config["thinking_config"]["thinking_level"] == "LOW"
     assert (config["temperature"], config["top_k"]) == (0.0, 1)
 
 

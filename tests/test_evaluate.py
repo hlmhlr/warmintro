@@ -199,3 +199,31 @@ def test_results_round_trip(tmp_path):
     results = [ev.Result("amara", "facts", "run", "text", True, checks={"judge": None})]
     ev.save_results(results, tmp_path / "r.json")
     assert ev.load_results(tmp_path / "r.json") == results
+
+
+@pytest.fixture
+def sample_profiles():
+    return {name: load_profile(CONTACTS_DIR / f"{name}.json")
+            for name in ("amara_okafor", "lukas_brenner", "sofia_marchetti")}
+
+
+def test_calibration_set_is_balanced_and_true_items_are_really_supported():
+    import json
+    items = json.loads(ev.CALIBRATION_PATH.read_text(encoding="utf-8"))["statements"]
+    assert sum(i["supported"] for i in items) == sum(not i["supported"] for i in items) == 6
+    assert all("error" in i for i in items if not i["supported"])
+
+
+def test_a_judge_that_always_says_yes_scores_50_percent(sample_profiles):
+    c = ev.calibrate_judge(ScriptedLLM(answers=["YES"], prompts=[]), sample_profiles)
+    assert (c.true_accepted, c.false_rejected, c.unclear) == (6, 0, 0)
+    assert c.accuracy == 0.5 and len(c.misses) == 6
+
+
+def test_a_perfect_judge_scores_100_percent(sample_profiles):
+    import json
+    items = json.loads(ev.CALIBRATION_PATH.read_text(encoding="utf-8"))["statements"]
+    # Each NO quotes the statement's own words, so it is not marked unclear.
+    replies = ["YES" if i["supported"] else "NO\n" + i["statement"] for i in items]
+    c = ev.calibrate_judge(ScriptedLLM(answers=replies, prompts=[]), sample_profiles)
+    assert c.accuracy == 1.0 and c.misses == []

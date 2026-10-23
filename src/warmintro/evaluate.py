@@ -26,6 +26,7 @@ from warmintro.profiles import ROOT, Profile
 from warmintro.query import answer_user_query, generate_initial_facts
 
 QUESTIONS_PATH = ROOT / "data" / "eval" / "questions.json"
+CALIBRATION_PATH = ROOT / "data" / "eval" / "judge_calibration.json"
 
 # LlamaIndex's FaithfulnessEvaluator passes an answer if "yes" appears
 # anywhere in the judge's reply. This judge must start with YES or NO, and
@@ -252,6 +253,50 @@ def rejudge(results: list[Result], profiles: dict[str, Profile], judge_llm: LLM)
             r.checks["judge_note"] = reason
         r.detail = "; ".join(problems)
         r.passed = not problems
+
+
+@dataclass
+class Calibration:
+    """How the judge does on statements whose answer is known."""
+
+    true_accepted: int = 0    # supported statements judged YES
+    true_total: int = 0
+    false_rejected: int = 0   # planted errors judged NO
+    false_total: int = 0
+    unclear: int = 0
+    misses: list[str] = field(default_factory=list)
+
+    @property
+    def accuracy(self) -> float:
+        total = self.true_total + self.false_total
+        return (self.true_accepted + self.false_rejected) / total if total else 0.0
+
+
+def calibrate_judge(judge_llm: LLM, profiles: dict[str, Profile],
+                    path: Path = CALIBRATION_PATH) -> Calibration:
+    """Judge the calibration statements and count right and wrong verdicts.
+
+    A judge that says YES to everything scores 50%, so the judge row of a
+    scorecard only means something next to this number.
+    """
+    with open(path, encoding="utf-8") as file:
+        items = json.load(file)["statements"]
+    result = Calibration()
+    for item in items:
+        grounded, _ = judge_statement(item["statement"],
+                                      profile_text_of(profiles[item["profile"]]), judge_llm)
+        if item["supported"]:
+            result.true_total += 1
+            result.true_accepted += grounded is True
+        else:
+            result.false_total += 1
+            result.false_rejected += grounded is False
+        if grounded is None:
+            result.unclear += 1
+        if grounded is not item["supported"]:
+            verdict = {True: "YES", False: "NO", None: "unclear"}[grounded]
+            result.misses.append(f"{verdict}: {item['statement']}")
+    return result
 
 
 def load_results(path: Path) -> list[Result]:

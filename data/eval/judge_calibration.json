@@ -1,0 +1,29 @@
+{
+  "_about": "Statements with a known answer, to measure the judge itself. 'supported': true statements rephrase the profile; false ones have one planted error. A judge that says YES to everything scores 6/12.",
+  "statements": [
+    {"profile": "amara_okafor", "supported": true,
+     "statement": "Amara Okafor leads a team of six engineers at Brightwind Grid."},
+    {"profile": "amara_okafor", "supported": true,
+     "statement": "Amara studied for her MSc part-time while working."},
+    {"profile": "amara_okafor", "supported": false, "error": "wrong year (2022)",
+     "statement": "Amara Okafor has led the data team at Brightwind Grid since 2019."},
+    {"profile": "amara_okafor", "supported": false, "error": "level is intermediate",
+     "statement": "Amara speaks fluent Dutch."},
+    {"profile": "lukas_brenner", "supported": true,
+     "statement": "Lukas played cello in the Vienna Chamber Philharmonic before moving into product work."},
+    {"profile": "lukas_brenner", "supported": true,
+     "statement": "Lukas teaches free cello lessons to children."},
+    {"profile": "lukas_brenner", "supported": false, "error": "no date given (a real slip from a run)",
+     "statement": "Lukas has volunteered as a cello teacher since 2020."},
+    {"profile": "lukas_brenner", "supported": false, "error": "wrong employer",
+     "statement": "Lukas Brenner works as a Product Manager at Corvo Robotics."},
+    {"profile": "sofia_marchetti", "supported": true,
+     "statement": "Sofia released a dataset of fruit images from orchards."},
+    {"profile": "sofia_marchetti", "supported": true,
+     "statement": "Sofia's PhD was about detecting small objects in outdoor scenes."},
+    {"profile": "sofia_marchetti", "supported": false, "error": "wrong year (2020)",
+     "statement": "Sofia won the Best Student Paper award in 2022."},
+    {"profile": "sofia_marchetti", "supported": false, "error": "wrong city (Zurich)",
+     "statement": "Sofia did her internship at Lumen AI Lab in Munich."}
+  ]
+}

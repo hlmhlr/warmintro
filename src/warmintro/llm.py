@@ -18,6 +18,11 @@ from warmintro.config import (
 
 OLLAMA_CONTEXT_WINDOW = 8192      # tokens the local model can read at once
 GEMINI_CONTEXT_WINDOW = 1_000_000
+# Gemini's output limit includes its hidden "thinking" tokens: with only the
+# answer's 250 tokens, thinking could use them all and the reply failed with
+# MAX_TOKENS. Thinking is kept low and gets this much extra room; answer
+# length is still set by the prompts ("one to three sentences").
+GEMINI_THINKING_HEADROOM = 1024
 OLLAMA_TIMEOUT = 180.0            # seconds; the first call also loads the model
 
 
@@ -69,12 +74,13 @@ def get_llm(
     if not settings.google_api_key:
         raise ValueError("LLM_PROVIDER=gemini needs GOOGLE_API_KEY in .env")
 
+    max_tokens = options["max_new_tokens"] + GEMINI_THINKING_HEADROOM
     return GoogleGenAI(
         model=model or settings.gemini_model,
         api_key=settings.google_api_key,
         temperature=options["temperature"],
         # Both set explicitly, otherwise GoogleGenAI calls Google on creation.
-        max_tokens=options["max_new_tokens"],
+        max_tokens=max_tokens,
         context_window=GEMINI_CONTEXT_WINDOW,
         # When generation_config is given, GoogleGenAI ignores max_tokens,
         # so the limit must be repeated here.
@@ -82,7 +88,9 @@ def get_llm(
             temperature=options["temperature"],
             top_k=options["top_k"],
             top_p=options["top_p"],
-            max_output_tokens=options["max_new_tokens"],
+            max_output_tokens=max_tokens,
+            # "low" is accepted by every current Flash model ("minimal" isn't).
+            thinking_config=types.ThinkingConfig(thinking_level="low"),
         ),
     )
 
