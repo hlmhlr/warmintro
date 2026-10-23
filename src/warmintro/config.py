@@ -18,6 +18,10 @@ CHUNK_SIZE = 400       # tokens per chunk, not characters
 # chunks repeated half of the previous one.
 CHUNK_OVERLAP = 40
 SIMILARITY_TOP_K = 4   # chunks retrieved per question
+# The facts request is broad ("career or education"), so it gets more of the
+# profile. A whole sample profile is about 13 short chunks.
+FACTS_TOP_K = 8
+FACTS_QUERY = "Provide three interesting facts about this person's career or education."
 
 # Gemini embeddings are cut to this size so they match Granite's 768.
 EMBED_DIMENSIONS = 768
