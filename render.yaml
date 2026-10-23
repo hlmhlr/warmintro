@@ -1,4 +1,4 @@
-# Render Blueprint: one free web service running the Gradio app with Gemini.
+# Render Blueprint: one free web service running the Gradio app.
 # Deploys only when the deploy workflow calls the deploy hook (on v* tags).
 services:
   - type: web
@@ -7,20 +7,29 @@ services:
     plan: free                 # 512 MB RAM, 0.1 CPU, sleeps after 15 min idle
     region: frankfurt
     branch: main
-    buildCommand: pip install uv && uv sync --locked --no-dev --extra gemini
+    buildCommand: pip install uv && uv sync --locked --no-dev --extra cloud
     startCommand: .venv/bin/python app.py
     healthCheckPath: /
     autoDeployTrigger: "off"   # deploys come from the workflow, after tests pass
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.12
+      # Free providers tried in order (Gemini's free tier may not be offered
+      # to users in the EEA, so the public demo doesn't use it).
       - key: LLM_PROVIDER
-        value: gemini
+        value: groq,cloudflare,openrouter
       - key: EMBEDDINGS_PROVIDER
-        value: gemini
-      - key: GOOGLE_API_KEY
-        sync: false            # entered in the Render dashboard, never committed
+        value: cloudflare
+      # Secrets: entered in the Render dashboard, never committed.
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CLOUDFLARE_API_TOKEN
+        sync: false
+      - key: CLOUDFLARE_ACCOUNT_ID
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
       - key: MAX_QUESTIONS_PER_SESSION
-        value: "20"            # protects the free Gemini quota
+        value: "20"            # protects the free quotas
       - key: GRADIO_ANALYTICS_ENABLED
         value: "False"

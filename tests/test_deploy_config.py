@@ -37,11 +37,11 @@ def test_python_version_is_full_and_matches_the_project(env):
 
 def test_build_installs_the_locked_cloud_packages_only(service):
     assert service["buildCommand"] == \
-        "pip install uv && uv sync --locked --no-dev --extra gemini"
+        "pip install uv && uv sync --locked --no-dev --extra cloud"
     extras = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"][
         "optional-dependencies"]
-    assert "gemini" in extras
-    assert not any("huggingface" in dep for dep in extras["gemini"])  # no PyTorch
+    assert "cloud" in extras
+    assert not any("huggingface" in dep for dep in extras["cloud"])  # no PyTorch
 
 
 def test_start_command_runs_the_app(service):
@@ -49,13 +49,32 @@ def test_start_command_runs_the_app(service):
     assert (ROOT / "app.py").exists()
 
 
-def test_secret_is_never_committed(env):
-    assert env["GOOGLE_API_KEY"] == {"key": "GOOGLE_API_KEY", "sync": False}
+SECRETS = ["GROQ_API_KEY", "CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID",
+           "OPENROUTER_API_KEY"]
 
 
-def test_cloud_uses_gemini_and_limits_questions(env):
-    assert env["LLM_PROVIDER"]["value"] == env["EMBEDDINGS_PROVIDER"]["value"] == "gemini"
+@pytest.mark.parametrize("name", SECRETS)
+def test_secrets_are_never_committed(env, name):
+    assert env[name] == {"key": name, "sync": False}
+
+
+def test_demo_uses_the_free_chain_not_gemini(env):
+    from warmintro.config import CLOUD_CHAIN
+
+    assert env["LLM_PROVIDER"]["value"] == CLOUD_CHAIN
+    assert env["EMBEDDINGS_PROVIDER"]["value"] == "cloudflare"
+    # Gemini's free tier may not be offered to users in the EEA.
+    assert not any("GOOGLE" in key or "GEMINI" in key for key in env)
     assert int(env["MAX_QUESTIONS_PER_SESSION"]["value"]) > 0
+
+
+def test_every_provider_in_the_chain_has_its_secrets(env):
+    from warmintro.config import CLOUD_CHAIN
+
+    needed = {"groq": ["GROQ_API_KEY"], "openrouter": ["OPENROUTER_API_KEY"],
+              "cloudflare": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]}
+    for provider in CLOUD_CHAIN.split(","):
+        assert all(name in env for name in needed[provider])
 
 
 def test_deploy_runs_tests_first_and_deploys_the_tested_commit():
