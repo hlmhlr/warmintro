@@ -52,6 +52,9 @@ class Settings:
     cloudflare_account_id: str = ""
     cloudflare_model: str = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
     cloudflare_embed_model: str = "@cf/baai/bge-base-en-v1.5"
+    # bge's model card recommends this prefix for short search queries (never
+    # for the stored passages). "none" turns it off.
+    cloudflare_query_instruction: str = "Represent this sentence for searching relevant passages: "
     openrouter_api_key: str = ""
     openrouter_model: str = "openrouter/free"
 
@@ -69,6 +72,7 @@ _ENV_NAMES = {  # Settings field -> environment variable
     "groq_model": "GROQ_MODEL", "cloudflare_api_token": "CLOUDFLARE_API_TOKEN",
     "cloudflare_account_id": "CLOUDFLARE_ACCOUNT_ID", "cloudflare_model": "CLOUDFLARE_MODEL",
     "cloudflare_embed_model": "CLOUDFLARE_EMBED_MODEL",
+    "cloudflare_query_instruction": "CLOUDFLARE_QUERY_INSTRUCTION",
     "openrouter_api_key": "OPENROUTER_API_KEY", "openrouter_model": "OPENROUTER_MODEL",
 }
 

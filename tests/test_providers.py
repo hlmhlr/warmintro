@@ -23,7 +23,8 @@ KEYS = {"GROQ_API_KEY": "gsk-test", "CLOUDFLARE_API_TOKEN": "cf-test",
 
 @pytest.fixture
 def cloud_env(clean_env):
-    for name in list(KEYS) + ["GROQ_MODEL", "CLOUDFLARE_MODEL", "OPENROUTER_MODEL"]:
+    for name in list(KEYS) + ["GROQ_MODEL", "CLOUDFLARE_MODEL", "OPENROUTER_MODEL",
+                              "CLOUDFLARE_QUERY_INSTRUCTION"]:
         clean_env.delenv(name, raising=False)
     for name, value in KEYS.items():
         clean_env.setenv(name, value)
@@ -136,12 +137,50 @@ def test_unknown_provider_in_a_chain_is_rejected(cloud_env):
         load_settings()
 
 
+def capture_embeddings(embedding):
+    """Fake embedding server: records each request's input texts."""
+    inputs = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        texts = json.loads(request.content)["input"]
+        inputs.append(texts)
+        return httpx.Response(200, json={"object": "list", "model": "m", "data": [
+            {"object": "embedding", "index": i, "embedding": [0.1] * 768}
+            for i in range(len(texts))]})
+
+    embedding._client = None
+    embedding._http_client = httpx.Client(transport=httpx.MockTransport(handler))
+    return inputs
+
+
 def test_cloudflare_embeddings(cloud_env):
     pytest.importorskip("llama_index.embeddings.openai_like")
     cloud_env.setenv("EMBEDDINGS_PROVIDER", "cloudflare")
     emb = get_embeddings()
     assert emb.model_name == "@cf/baai/bge-base-en-v1.5"
-    assert emb.api_base == "https://api.cloudflare.com/client/v4/accounts/acc123/ai/v1"
+    assert emb.inner.api_base == "https://api.cloudflare.com/client/v4/accounts/acc123/ai/v1"
+
+
+def test_bge_instruction_goes_on_queries_only(cloud_env):
+    pytest.importorskip("llama_index.embeddings.openai_like")
+    cloud_env.setenv("EMBEDDINGS_PROVIDER", "cloudflare")
+    emb = get_embeddings()
+    inputs = capture_embeddings(emb.inner)
+    emb.get_query_embedding("What is her current job?")
+    emb.get_text_embedding_batch(["Current job: Amara works as Lead."])
+    assert inputs == [
+        ["Represent this sentence for searching relevant passages: What is her current job?"],
+        ["Current job: Amara works as Lead."]]  # the model card: never on passages
+
+
+def test_bge_instruction_can_be_turned_off(cloud_env):
+    pytest.importorskip("llama_index.embeddings.openai_like")
+    cloud_env.setenv("EMBEDDINGS_PROVIDER", "cloudflare")
+    cloud_env.setenv("CLOUDFLARE_QUERY_INSTRUCTION", "none")
+    emb = get_embeddings()
+    inputs = capture_embeddings(emb)
+    emb.get_query_embedding("What is her current job?")
+    assert inputs == [["What is her current job?"]]
 
 
 # ---- The fallback itself, with scripted models ------------------------

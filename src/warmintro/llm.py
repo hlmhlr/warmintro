@@ -10,6 +10,7 @@ e.g. "groq,cloudflare,openrouter": they are tried in that order.
 """
 
 import logging
+from typing import Any
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.llms import LLM
@@ -189,6 +190,31 @@ def _build_openai_like(provider: str, options: dict, model: str | None,
     )
 
 
+class QueryInstructionEmbedding(BaseEmbedding):
+    """Adds an instruction in front of search queries only, not stored chunks.
+
+    bge models are trained to expect it for short queries; the Hugging Face
+    integration adds it automatically, the OpenAI-compatible client doesn't.
+    In a real run, "What is this person's current job title?" retrieved a past
+    job instead of the current one without it.
+    """
+
+    inner: Any
+    instruction: str
+
+    def _get_query_embedding(self, query: str) -> list[float]:
+        return self.inner.get_query_embedding(self.instruction + query)
+
+    async def _aget_query_embedding(self, query: str) -> list[float]:
+        return await self.inner.aget_query_embedding(self.instruction + query)
+
+    def _get_text_embedding(self, text: str) -> list[float]:
+        return self.inner.get_text_embedding(text)
+
+    def _get_text_embeddings(self, texts: list[str]) -> list[list[float]]:
+        return self.inner.get_text_embedding_batch(texts)
+
+
 def get_embeddings(settings: Settings | None = None) -> BaseEmbedding:
     """Return the embedding model from EMBEDDINGS_PROVIDER.
 
@@ -227,7 +253,7 @@ def get_embeddings(settings: Settings | None = None) -> BaseEmbedding:
         if not (settings.cloudflare_api_token and settings.cloudflare_account_id):
             raise ValueError("EMBEDDINGS_PROVIDER=cloudflare needs CLOUDFLARE_API_TOKEN "
                              "and CLOUDFLARE_ACCOUNT_ID in .env")
-        return OpenAILikeEmbedding(
+        embedding = OpenAILikeEmbedding(
             model_name=settings.cloudflare_embed_model,  # bge-base: 768 numbers
             api_base=OPENAI_LIKE["cloudflare"][0].format(
                 account=settings.cloudflare_account_id),
@@ -235,6 +261,11 @@ def get_embeddings(settings: Settings | None = None) -> BaseEmbedding:
             timeout=CLOUD_TIMEOUT,
             max_retries=2,
         )
+        instruction = settings.cloudflare_query_instruction
+        if instruction.lower() == "none":
+            return embedding
+        return QueryInstructionEmbedding(inner=embedding, instruction=instruction,
+                                         model_name=embedding.model_name)
 
     # gemini
     try:
