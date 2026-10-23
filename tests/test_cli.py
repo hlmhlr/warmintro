@@ -1,6 +1,7 @@
 import pytest
 
 import warmintro.cli as cli
+import warmintro.common_ground
 import warmintro.index
 import warmintro.query
 from fakes import KeywordEmbedding, ScriptedLLM
@@ -20,6 +21,7 @@ def fake_models(monkeypatch):
                       prompts=[])
     monkeypatch.setattr(warmintro.index, "get_embeddings", lambda settings=None: KeywordEmbedding())
     monkeypatch.setattr(warmintro.query, "get_llm", lambda generation, model=None: llm)
+    monkeypatch.setattr(warmintro.common_ground, "get_llm", lambda generation, model=None: llm)
     return llm
 
 
@@ -75,3 +77,18 @@ def test_startup_failure_exits_with_a_friendly_message(fake_models):
     fake_models.answers = [ConnectionError("down")]
     with pytest.raises(SystemExit, match="Is Ollama running"):
         cli.main(["--profile", "amara_okafor"])
+
+
+def test_me_option_adds_common_ground(fake_models, monkeypatch, capsys):
+    fake_models.answers = ["1. Fact.", "1. Shared: Westmere Technical University.", "Bye"]
+    monkeypatch.setattr("builtins.input", scripted_inputs())
+    cli.main(["--profile", "amara_okafor", "--me", "alex_rivera"])
+    out = capsys.readouterr().out
+    assert "What you have in common with Amara Okafor:" in out
+    assert "Shared: Westmere Technical University." in out
+    assert "A: " in fake_models.prompts[1] and "Alex Rivera" in fake_models.prompts[1]
+
+
+def test_unknown_me_profile_lists_my_samples():
+    with pytest.raises(SystemExit, match="alex_rivera, sam_lindqvist"):
+        cli.main(["--profile", "amara_okafor", "--me", "nobody"])

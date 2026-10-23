@@ -3,6 +3,7 @@
 Run: uv run warmintro                         # pick a sample profile
      uv run warmintro --profile lukas_brenner
      uv run warmintro --profile path/to/profile.json --model granite4:micro-h
+     uv run warmintro --profile amara_okafor --me alex_rivera   # + common ground
 
 The lab's --url, --api-key and --mock options are gone: profiles are local
 files, so there is nothing to fetch.
@@ -17,10 +18,11 @@ from pathlib import Path
 
 from llama_index.core import VectorStoreIndex
 
+from warmintro.common_ground import find_common_ground
 from warmintro.errors import friendly_error
 from warmintro.index import build_profile_index
 from warmintro.llm import describe
-from warmintro.profiles import CONTACTS_DIR, list_profiles, load_profile
+from warmintro.profiles import CONTACTS_DIR, ME_DIR, list_profiles, load_profile
 from warmintro.query import answer_user_query, generate_initial_facts
 
 EXIT_WORDS = {"exit", "quit", "bye"}
@@ -79,6 +81,8 @@ def chat(index: VectorStoreIndex, model: str | None = None,
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Icebreakers from a professional profile")
     parser.add_argument("--profile", help="profile JSON file or sample name")
+    parser.add_argument("--me", help="your own profile (file or sample name), "
+                                     "to also show what you have in common")
     parser.add_argument("--model", help="another Ollama/Gemini model name")
     parser.add_argument("--verbose", action="store_true", help="show error details")
     args = parser.parse_args(argv)
@@ -87,16 +91,22 @@ def main(argv: list[str] | None = None) -> None:
                         stream=sys.stderr, format="%(levelname)s %(name)s: %(message)s")
 
     path = resolve_profile(args.profile) if args.profile else choose_profile()
+    me_path = resolve_profile(args.me, ME_DIR) if args.me else None
     print(describe())
     try:
         profile = load_profile(path)
         index = build_profile_index({"them": profile})
         facts = generate_initial_facts(index, model=args.model)
+        shared = (find_common_ground(load_profile(me_path), profile, model=args.model)
+                  if me_path else None)
     except Exception as error:
         raise SystemExit(friendly_error(error)) from None
 
     print(f"\nHere are 3 interesting facts about {profile.full_name}:\n")
     print(facts.text)
+    if shared:
+        print(f"\nWhat you have in common with {profile.full_name}:\n")
+        print(shared.text)
     chat(index, model=args.model)
 
 
