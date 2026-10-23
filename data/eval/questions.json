@@ -1,0 +1,66 @@
+{
+  "_about": "Fixed questions for the scorecard. 'expect' lists what a correct answer must mention: every item must match, and an item that is a list matches if any of its words appears. Unanswerable questions have no answer in the profile, so the right reply is 'I don't know.' Qualifier questions check that the answer keeps a detail such as 'basic' or a past job.",
+  "amara_okafor": {
+    "answerable": [
+      {"question": "What is her current job title?", "expect": ["Data Engineering Lead"]},
+      {"question": "Which company does she work for now?", "expect": ["Brightwind Grid"]},
+      {"question": "Where did she do her master's degree?", "expect": ["Westmere"]},
+      {"question": "What was her thesis about?", "expect": ["wind"]},
+      {"question": "Which open-source project does she maintain?", "expect": ["gridflow"]},
+      {"question": "What did she build at Paystream Africa?", "expect": ["fraud"]}
+    ],
+    "unanswerable": [
+      "What is her salary?",
+      "How many children does she have?",
+      "What is her phone number?",
+      "Which political party does she support?"
+    ],
+    "qualifiers": [
+      {"question": "How well does she speak Dutch?", "expect": ["intermediate"]},
+      {"question": "Is she still working at Paystream Africa?",
+       "expect": [["no", "not", "former", "previously", "until", "2022", "left"]]}
+    ]
+  },
+  "lukas_brenner": {
+    "answerable": [
+      {"question": "What is his current job title?", "expect": ["Product Manager"]},
+      {"question": "Which company does he work for?", "expect": ["Tandem Health"]},
+      {"question": "Which orchestra did he play in?", "expect": ["Vienna Chamber Philharmonic"]},
+      {"question": "How many people use the app he manages?", "expect": [["40,000", "40000", "40 000"]]},
+      {"question": "Where does he volunteer?", "expect": ["Music for Every Kid"]},
+      {"question": "What did he study at the conservatory?", "expect": ["cello"]}
+    ],
+    "unanswerable": [
+      "What is his salary?",
+      "Is he married?",
+      "What car does he drive?",
+      "What is his email address?"
+    ],
+    "qualifiers": [
+      {"question": "Does he speak Italian fluently?", "expect": ["basic"]},
+      {"question": "Is he still a professional cellist?",
+       "expect": [["no", "not", "former", "until", "2019", "left", "used to"]]}
+    ]
+  },
+  "sofia_marchetti": {
+    "answerable": [
+      {"question": "What is her current job title?", "expect": ["Machine Learning Engineer"]},
+      {"question": "Which company does she work for?", "expect": ["Corvo Robotics"]},
+      {"question": "What was her PhD about?", "expect": [["computer vision", "small objects"]]},
+      {"question": "How fast does her fruit-detection model run?", "expect": ["15"]},
+      {"question": "What is the name of the dataset she released?", "expect": ["Orchard-Mini"]},
+      {"question": "Which award did she win?", "expect": ["Best Student Paper"]}
+    ],
+    "unanswerable": [
+      "What is her salary?",
+      "How many children does she have?",
+      "Which football team does she support?",
+      "What is her home address?"
+    ],
+    "qualifiers": [
+      {"question": "How well does she speak German?", "expect": ["intermediate"]},
+      {"question": "Does she still work at Lumen AI Lab?",
+       "expect": [["no", "not", "former", "intern", "until", "2020"]]}
+    ]
+  }
+}
