@@ -1,0 +1,27 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:  # lets the deploy workflow run the tests first
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Install uv and Python 3.12
+        uses: astral-sh/setup-uv@v10.3.2
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      # --locked fails if uv.lock is out of date with pyproject.toml.
+      # The gemini extra is installed so its tests run; no Ollama is needed.
+      - name: Install dependencies
+        run: uv sync --locked --extra gemini
+
+      - name: Run tests
+        run: uv run pytest -v

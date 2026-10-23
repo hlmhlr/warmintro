@@ -1,5 +1,7 @@
 # warmintro
 
+![tests](https://github.com/hlmhlr/warmintro/actions/workflows/tests.yml/badge.svg)
+
 > Based on IBM's **"Build an AI Icebreaker Bot with IBM Granite 3.0 & LlamaIndex"** lab
 > (*Build RAG Applications: Get Started* course on Coursera), rebuilt to run locally
 > and free on IBM Granite via Ollama.
