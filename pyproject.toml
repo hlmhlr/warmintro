@@ -13,6 +13,9 @@ dependencies = [
     "python-dotenv>=1.0",
 ]
 
+[project.scripts]
+warmintro = "warmintro.cli:main"  # uv run warmintro
+
 [project.optional-dependencies]
 # Cloud provider for the deployed app (no PyTorch).
 gemini = [
