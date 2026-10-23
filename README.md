@@ -10,8 +10,7 @@
 > (*Build RAG Applications: Get Started* course on Coursera), rebuilt to run **locally
 > and free** on IBM Granite via Ollama, extended with a common-ground mode and an answer
 > evaluation, and deployed with a fallback across free cloud APIs.
-
-**Live demo:** LIVE_DEMO_URL *(free server: the first visit after 15 idle minutes takes about a minute to wake up)*
+**▶ [Try the live demo](https://warmintro-jaxs.onrender.com)** (free hosting: the first visit after a quiet period takes about a minute while the server wakes up)
 
 ![warmintro: facts and common ground](docs/screenshots/app.png)
 
