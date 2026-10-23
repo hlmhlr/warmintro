@@ -1,0 +1,26 @@
+# Render Blueprint: one free web service running the Gradio app with Gemini.
+# Deploys only when the deploy workflow calls the deploy hook (on v* tags).
+services:
+  - type: web
+    name: warmintro
+    runtime: python
+    plan: free                 # 512 MB RAM, 0.1 CPU, sleeps after 15 min idle
+    region: frankfurt
+    branch: main
+    buildCommand: pip install uv && uv sync --locked --no-dev --extra gemini
+    startCommand: .venv/bin/python app.py
+    healthCheckPath: /
+    autoDeployTrigger: "off"   # deploys come from the workflow, after tests pass
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.12
+      - key: LLM_PROVIDER
+        value: gemini
+      - key: EMBEDDINGS_PROVIDER
+        value: gemini
+      - key: GOOGLE_API_KEY
+        sync: false            # entered in the Render dashboard, never committed
+      - key: MAX_QUESTIONS_PER_SESSION
+        value: "20"            # protects the free Gemini quota
+      - key: GRADIO_ANALYTICS_ENABLED
+        value: "False"

@@ -3436,6 +3436,7 @@ hf = [
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
@@ -3453,7 +3454,10 @@ requires-dist = [
 provides-extras = ["gemini", "hf"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8" }]
+dev = [
+    { name = "pytest", specifier = ">=8" },
+    { name = "pyyaml", specifier = ">=6" },
+]
 
 [[package]]
 name = "websockets"

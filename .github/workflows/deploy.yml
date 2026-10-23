@@ -1,0 +1,27 @@
+name: deploy
+
+# Deploy to Render when a version tag is pushed: git tag v1.0.0 && git push --tags
+# Needs the repository secret RENDER_DEPLOY_HOOK_URL
+# (Render: service > Settings > Deploy Hook).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  test:
+    uses: ./.github/workflows/tests.yml
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger the Render deploy for this commit
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "Missing secret RENDER_DEPLOY_HOOK_URL"; exit 1
+          fi
+          # &ref= deploys exactly the tested commit, not the branch head.
+          curl --fail --silent --show-error -X POST "${HOOK}&ref=${GITHUB_SHA}"
