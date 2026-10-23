@@ -16,11 +16,18 @@ class ReadTimeout(Exception):
     """Same name as httpx's timeout error."""
 
 
+class APIConnectionError(Exception):
+    """Same name as the OpenAI client's connection error."""
+
+
 @pytest.mark.parametrize("error, expected", [
     (ConnectionError("Failed to connect to Ollama"), "Is Ollama running?"),
     (ReadTimeout("slow"), "took too long"),
+    (APIConnectionError("Connection error."), "Check your internet connection"),
     (ApiError(429, "RESOURCE_EXHAUSTED"), "free API limit"),
-    (ApiError(400, "API key not valid"), "GOOGLE_API_KEY"),
+    (ApiError(400, "API key not valid"), "API key was rejected"),
+    (ApiError(503, "UNAVAILABLE: high demand"), "busy right now"),
+    (ApiError(504, "DEADLINE_EXCEEDED"), "busy right now"),
     (ValueError("The question is empty."), "The question is empty."),
     (RuntimeError("Response was terminated early: MAX_TOKENS"), "length limit"),
     (MissingExtra("LLM_PROVIDER=gemini", "gemini", ImportError(name="google")),

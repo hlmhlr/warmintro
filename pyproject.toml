@@ -25,12 +25,13 @@ gemini = [
 ]
 # Granite embeddings on CPU through Hugging Face (installs PyTorch).
 hf = ["llama-index-embeddings-huggingface>=0.8"]
+cloud = [
+    "llama-index-embeddings-openai-like>=0.3",
+    "llama-index-llms-openai-like>=0.8",
+]
 
 [dependency-groups]
-dev = [
-    "pytest>=8",
-    "pyyaml>=6",
-]
+dev = ["pytest>=8"]
 
 [build-system]
 requires = ["hatchling"]

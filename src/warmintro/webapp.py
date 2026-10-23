@@ -18,10 +18,10 @@ import os
 import gradio as gr
 
 from warmintro.common_ground import find_common_ground
-from warmintro.config import load_settings
+from warmintro.config import ANSWER_GENERATION, FACTS_GENERATION, load_settings
 from warmintro.errors import friendly_error
 from warmintro.index import build_profile_index
-from warmintro.llm import describe
+from warmintro.llm import describe, describe_llm, get_embeddings, get_llm
 from warmintro.profiles import (
     CONTACTS_DIR,
     ME_DIR,
@@ -35,6 +35,7 @@ from warmintro.query import answer_user_query, generate_initial_facts
 logger = logging.getLogger(__name__)
 
 PASTE, NONE = "paste", "none"
+AUTO = "auto"  # model choice for a provider chain: each provider uses its own model
 SESSION_SECONDS = 60 * 60   # a session's index is dropped after an hour
 MAX_SESSIONS = 50           # sessions kept in memory at once (free server: 512 MB)
 EXAMPLE_QUESTIONS = [
@@ -58,11 +59,14 @@ def me_choices() -> list[tuple[str, str]]:
     return [("No, skip this", NONE)] + samples + [("Paste my profile...", PASTE)]
 
 
-def available_models() -> list[str]:
-    """Chat models the user can pick. Ollama: the installed ones."""
+def available_models() -> list[tuple[str, str]]:
+    """Models the user can pick, as (label, value). Ollama: the installed ones."""
     settings = load_settings()
-    if settings.llm_provider == "gemini":
-        return [settings.gemini_model]
+    if len(settings.llm_providers) > 1:
+        return [(f"automatic: {describe_llm(settings)}", AUTO)]
+    if settings.llm_provider != "ollama":
+        name = describe_llm(settings).split(" (")[0]
+        return [(name, name)]
     try:
         import ollama
 
@@ -70,8 +74,19 @@ def available_models() -> list[str]:
         chat_models = [name for name in names if "embed" not in name]
     except Exception:  # Ollama not running yet: offer the configured model
         chat_models = []
-    return chat_models if settings.ollama_model in chat_models else \
-        [settings.ollama_model] + chat_models
+    if settings.ollama_model not in chat_models:
+        chat_models = [settings.ollama_model] + chat_models
+    return [(name, name) for name in chat_models]
+
+
+def _llm(generation, model: str):
+    return get_llm(generation, model=None if model == AUTO else model)
+
+
+def _answered_by(llm) -> str:
+    """For a provider chain: which provider wrote the answer."""
+    provider = getattr(llm, "last_provider", None)
+    return f"\n\n<sub>Written by {provider}</sub>" if provider else ""
 
 
 def max_questions() -> int:
@@ -97,13 +112,16 @@ def prepare(contact: str, contact_text: str, me: str, me_text: str, model: str):
         profile = _profile(contact, contact_text, CONTACTS_DIR, "This person")
         my_profile = None if me == NONE else _profile(me, me_text, ME_DIR, "You")
         index = build_profile_index({"them": profile})
-        facts = generate_initial_facts(index, model=model)
-        common = find_common_ground(my_profile, profile, model=model) if my_profile else None
+        llm = _llm(FACTS_GENERATION, model)
+        facts = generate_initial_facts(index, llm=llm)
+        facts_by = _answered_by(llm)
+        common = find_common_ground(my_profile, profile, llm=llm) if my_profile else None
+        common_by = _answered_by(llm)
     except Exception as error:
         return f"⚠️ {friendly_error(error)}", "", None, []
 
-    facts_md = f"### 3 facts about {profile.full_name}\n\n{facts.text}"
-    common_md = (f"### What you have in common\n\n{common.text}" if common else "")
+    facts_md = f"### 3 facts about {profile.full_name}\n\n{facts.text}{facts_by}"
+    common_md = (f"### What you have in common\n\n{common.text}{common_by}" if common else "")
     session = {"index": index, "name": profile.full_name, "model": model, "questions": 0}
     return facts_md, common_md, session, []
 
@@ -124,7 +142,10 @@ def ask(question: str, history: list[dict], session: dict | None):
                  "Load the profile again to continue.")
     else:
         try:
-            reply = answer_user_query(session["index"], question, model=session["model"]).text
+            llm = _llm(ANSWER_GENERATION, session["model"])
+            reply = answer_user_query(session["index"], question, llm=llm).text
+            provider = getattr(llm, "last_provider", None)
+            reply += f" *({provider})*" if provider else ""
             session["questions"] += 1
         except Exception as error:
             reply = f"⚠️ {friendly_error(error)}"
@@ -159,7 +180,7 @@ def build_ui() -> gr.Blocks:
                 me_text = gr.Textbox(label="Your profile (JSON or plain text)",
                                      lines=6, visible=False)
         with gr.Row():
-            model = gr.Dropdown(models, value=models[0], label="Model",
+            model = gr.Dropdown(models, value=models[0][1], label="Model",
                                 interactive=len(models) > 1)
             start = gr.Button("Get icebreakers", variant="primary")
 
@@ -192,8 +213,21 @@ def server_settings() -> dict:
     return {"server_name": "127.0.0.1", "server_port": 7860}
 
 
+def check_models() -> None:
+    """Create both models once, so a wrong setup stops the app at startup
+    (e.g. LLM_PROVIDER=gemini without its packages) instead of failing on
+    the first click. Creating them makes no network calls."""
+    try:
+        get_llm()
+        get_embeddings()
+    except Exception as error:
+        raise SystemExit(f"Can't start: {friendly_error(error)}\nSettings: {describe()}") \
+            from None
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    check_models()
     build_ui().launch(
         **server_settings(),
         show_error=False,                    # never send tracebacks to the browser

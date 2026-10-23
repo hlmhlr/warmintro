@@ -9,8 +9,12 @@ from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
-LLM_PROVIDERS = ("ollama", "gemini")
-EMBEDDINGS_PROVIDERS = ("ollama", "huggingface", "gemini")
+LLM_PROVIDERS = ("ollama", "gemini", "groq", "cloudflare", "openrouter")
+EMBEDDINGS_PROVIDERS = ("ollama", "huggingface", "gemini", "cloudflare")
+# The live demo's chain: if one free provider is busy or out of quota, the
+# next one answers. Groq and Cloudflare serve a fixed model; OpenRouter's
+# free router picks a random free model, so it comes last.
+CLOUD_CHAIN = "groq,cloudflare,openrouter"
 
 # Retrieval settings (the lab's CHUNK_SIZE and SIMILARITY_TOP_K).
 CHUNK_SIZE = 400       # tokens per chunk, not characters
@@ -24,7 +28,8 @@ SIMILARITY_TOP_K = 4   # chunks retrieved per question
 FACTS_MAX_CHUNKS = 30
 FACTS_QUERY = "Provide three interesting facts about this person's career or education."
 
-# Gemini embeddings are cut to this size so they match Granite's 768.
+# Gemini embeddings are cut to this size so they match Granite's 768
+# (Cloudflare's bge-base model has 768 too).
 EMBED_DIMENSIONS = 768
 
 
@@ -32,37 +37,57 @@ EMBED_DIMENSIONS = 768
 class Settings:
     """Model choices read from the environment (.env)."""
 
-    llm_provider: str
+    llm_provider: str          # one provider, or a comma list tried in order
     embeddings_provider: str
-    ollama_base_url: str
-    ollama_model: str
-    ollama_embed_model: str
-    google_api_key: str
-    gemini_model: str
-    gemini_embed_model: str
-    hf_embed_model: str
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "granite4:tiny-h"
+    ollama_embed_model: str = "granite-embedding:278m"
+    google_api_key: str = ""
+    gemini_model: str = "gemini-flash-latest"
+    gemini_embed_model: str = "gemini-embedding-2"
+    hf_embed_model: str = "ibm-granite/granite-embedding-278m-multilingual"
+    groq_api_key: str = ""
+    groq_model: str = "openai/gpt-oss-120b"
+    cloudflare_api_token: str = ""
+    cloudflare_account_id: str = ""
+    cloudflare_model: str = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    cloudflare_embed_model: str = "@cf/baai/bge-base-en-v1.5"
+    openrouter_api_key: str = ""
+    openrouter_model: str = "openrouter/free"
+
+    @property
+    def llm_providers(self) -> tuple[str, ...]:
+        """LLM_PROVIDER as a tuple: "groq,cloudflare" -> ("groq", "cloudflare")."""
+        return tuple(p.strip() for p in self.llm_provider.split(",") if p.strip())
+
+
+_ENV_NAMES = {  # Settings field -> environment variable
+    "ollama_base_url": "OLLAMA_BASE_URL", "ollama_model": "OLLAMA_MODEL",
+    "ollama_embed_model": "OLLAMA_EMBED_MODEL", "google_api_key": "GOOGLE_API_KEY",
+    "gemini_model": "GEMINI_MODEL", "gemini_embed_model": "GEMINI_EMBED_MODEL",
+    "hf_embed_model": "HF_EMBED_MODEL", "groq_api_key": "GROQ_API_KEY",
+    "groq_model": "GROQ_MODEL", "cloudflare_api_token": "CLOUDFLARE_API_TOKEN",
+    "cloudflare_account_id": "CLOUDFLARE_ACCOUNT_ID", "cloudflare_model": "CLOUDFLARE_MODEL",
+    "cloudflare_embed_model": "CLOUDFLARE_EMBED_MODEL",
+    "openrouter_api_key": "OPENROUTER_API_KEY", "openrouter_model": "OPENROUTER_MODEL",
+}
 
 
 def load_settings() -> Settings:
     """Read the settings, using local defaults for anything not set."""
     load_dotenv()
+    values = {field: os.getenv(env).strip() for field, env in _ENV_NAMES.items()
+              if os.getenv(env, "").strip()}
     settings = Settings(
-        llm_provider=os.getenv("LLM_PROVIDER", "ollama").strip().lower(),
+        llm_provider=os.getenv("LLM_PROVIDER", "ollama").strip().lower().replace(" ", ""),
         embeddings_provider=os.getenv("EMBEDDINGS_PROVIDER", "ollama").strip().lower(),
-        ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
-        ollama_model=os.getenv("OLLAMA_MODEL", "granite4:tiny-h"),
-        ollama_embed_model=os.getenv("OLLAMA_EMBED_MODEL", "granite-embedding:278m"),
-        google_api_key=os.getenv("GOOGLE_API_KEY", ""),
-        gemini_model=os.getenv("GEMINI_MODEL", "gemini-flash-latest"),
-        gemini_embed_model=os.getenv("GEMINI_EMBED_MODEL", "gemini-embedding-2"),
-        hf_embed_model=os.getenv(
-            "HF_EMBED_MODEL", "ibm-granite/granite-embedding-278m-multilingual"
-        ),
+        **values,
     )
-    if settings.llm_provider not in LLM_PROVIDERS:
+    unknown = [p for p in settings.llm_providers if p not in LLM_PROVIDERS]
+    if unknown or not settings.llm_providers:
         raise ValueError(
             f"LLM_PROVIDER={settings.llm_provider!r} is not supported. "
-            f"Choose one of: {', '.join(LLM_PROVIDERS)}"
+            f"Choose one of: {', '.join(LLM_PROVIDERS)} (or a comma list, e.g. {CLOUD_CHAIN})"
         )
     if settings.embeddings_provider not in EMBEDDINGS_PROVIDERS:
         raise ValueError(

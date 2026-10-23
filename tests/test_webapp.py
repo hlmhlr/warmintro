@@ -21,7 +21,7 @@ def llm(monkeypatch, clean_env):
         return fake
 
     monkeypatch.setattr(warmintro.index, "get_embeddings", lambda settings=None: KeywordEmbedding())
-    for module in (warmintro.query, warmintro.common_ground):
+    for module in (warmintro.query, warmintro.common_ground, web):
         monkeypatch.setattr(module, "get_llm", get_llm)
     return fake
 
@@ -102,12 +102,37 @@ def test_choices_list_samples_and_paste():
 
 def test_gemini_offers_only_its_model(clean_env):
     clean_env.setenv("LLM_PROVIDER", "gemini")
-    assert web.available_models() == ["gemini-flash-latest"]
+    assert web.available_models() == [("gemini-flash-latest", "gemini-flash-latest")]
 
 
 def test_ollama_down_still_offers_the_configured_model(clean_env):
     clean_env.setenv("OLLAMA_BASE_URL", "http://localhost:1")
-    assert web.available_models() == ["granite4:tiny-h"]
+    assert web.available_models() == [("granite4:tiny-h", "granite4:tiny-h")]
+
+
+def test_a_chain_offers_one_automatic_choice(clean_env):
+    clean_env.setenv("LLM_PROVIDER", "groq,cloudflare")
+    [(label, value)] = web.available_models()
+    assert value == web.AUTO and label.startswith("automatic: openai/gpt-oss-120b (groq) →")
+
+
+def test_automatic_choice_lets_each_provider_use_its_model(llm):
+    web.prepare("amara_okafor", "", web.NONE, "", web.AUTO)
+    assert MODELS_ASKED == [None]
+
+
+def test_the_provider_that_answered_is_shown(llm, monkeypatch):
+    from warmintro.fallback import FallbackLLM
+    from fakes import ScriptedLLM as Fake
+
+    chain = FallbackLLM(llms=[Fake(answers=[RuntimeError("429")], prompts=[]),
+                              Fake(answers=["1. Fact."], prompts=[])],
+                        names=["groq", "cloudflare"])
+    monkeypatch.setattr(web, "get_llm", lambda generation, model=None: chain)
+    facts, _, session, _ = web.prepare("amara_okafor", "", web.NONE, "", web.AUTO)
+    assert facts.endswith("<sub>Written by cloudflare</sub>")
+    _, history = web.ask("Where did she study?", [], session)
+    assert history[-1]["content"].endswith("*(cloudflare)*")
 
 
 def test_server_settings(monkeypatch):
@@ -122,3 +147,17 @@ def test_ui_builds_with_named_api_events(clean_env):
     demo = web.build_ui()
     names = {dep.get("api_name") for dep in demo.config["dependencies"]}
     assert {"icebreakers", "ask"} <= names
+
+
+def test_startup_stops_when_the_provider_packages_are_missing(clean_env):
+    import sys
+    clean_env.setenv("LLM_PROVIDER", "gemini")
+    clean_env.setenv("GOOGLE_API_KEY", "fake-key")
+    clean_env.setitem(sys.modules, "llama_index.llms.google_genai", None)
+    with pytest.raises(SystemExit, match="uv sync --extra gemini") as stop:
+        web.check_models()
+    assert "LLM: gemini-flash-latest (gemini)" in str(stop.value)
+
+
+def test_startup_check_passes_for_the_local_setup(clean_env):
+    web.check_models()  # Ollama models are created without contacting Ollama
