@@ -50,19 +50,60 @@ def test_unsupported_numbers_ignore_list_numbers():
 
 @pytest.mark.parametrize("reply, expected", [
     ("YES", (True, "")),
-    ("No.\n\"Since 2020\" is not in the profile.", (False, '"Since 2020" is not in the profile.')),
+    ("No.\nsince 2020", (False, "since 2020")),
     ("NO", (False, "no reason given")),
 ])
 def test_judge_reads_only_the_first_word(reply, expected):
-    assert ev.judge_grounding("text", "profile", ScriptedLLM(answers=[reply], prompts=[])) \
-        == expected
+    llm = ScriptedLLM(answers=[reply], prompts=[])
+    assert ev.judge_statement("He volunteers since 2020.", "profile", llm) == expected
 
 
 def test_judge_is_not_fooled_by_a_later_yes():
     # FaithfulnessEvaluator would pass this, because it contains "yes".
     llm = ScriptedLLM(answers=["Not sure, yes and no."], prompts=[])
-    grounded, reason = ev.judge_grounding("text", "profile", llm)
+    grounded, reason = ev.judge_statement("A statement.", "profile", llm)
     assert grounded is None and "unclear" in reason
+
+
+def test_a_no_that_quotes_the_profile_is_unclear_not_a_failure():
+    # Baseline: the judge answered NO and quoted a line of the profile.
+    llm = ScriptedLLM(answers=["NO\nLukas Brenner worked as UX Researcher at Tandem Health"],
+                      prompts=[])
+    grounded, reason = ev.judge_statement("Lukas played cello for eight years.", "p", llm)
+    assert grounded is None and "isn't in the statement" in reason
+
+
+@pytest.mark.parametrize("fact, statement", [
+    ("Lukas studied cello. How did that shape you?", "Lukas studied cello."),
+    ('Amara leads a team. Conversation Starter: "What inspired you?"', "Amara leads a team."),
+    ("Sofia has a PhD. - Friendly question: Why vision?", "Sofia has a PhD."),
+    ("Amara maintains gridflow.\n   Question: How did it start?", "Amara maintains gridflow."),
+    ("How are you?", ""),
+])
+def test_questions_are_removed_before_judging(fact, statement):
+    assert ev.statement_only(fact) == statement
+
+
+def test_facts_are_judged_one_at_a_time_without_questions():
+    llm = ScriptedLLM(answers=["YES", "YES", "YES"], prompts=[])
+    assert ev.judge_grounding(GOOD_FACTS, "profile", llm) == (True, "")
+    assert len(llm.prompts) == 3
+    statements = [p.split("Statement:\n")[1].split("\n\n")[0] for p in llm.prompts]
+    assert statements[0] == "She leads data engineering at Brightwind Grid."
+    assert not any("?" in statement for statement in statements)
+    assert "She maintains gridflow." in llm.prompts[2]
+
+
+def test_one_unsupported_fact_fails_the_facts():
+    llm = ScriptedLLM(answers=["YES", "NO\nWestmere Technical University", "YES"], prompts=[])
+    assert ev.judge_grounding(GOOD_FACTS, "profile", llm) == (
+        False, "fact 2: Westmere Technical University")
+
+
+def test_unclear_replies_are_reported_separately():
+    llm = ScriptedLLM(answers=["YES", "maybe", "YES"], prompts=[])
+    grounded, reason = ev.judge_grounding(GOOD_FACTS, "profile", llm)
+    assert grounded is None and reason.startswith("fact 2: unclear")
 
 
 @pytest.fixture
@@ -93,7 +134,8 @@ def test_question_kinds_are_scored(amara_index):
 def test_facts_checks_and_judge(amara_index):
     profile = load_profile(CONTACTS_DIR / "amara_okafor.json")
     llm = ScriptedLLM(answers=[GOOD_FACTS, "Intro\n" + GOOD_FACTS + " since 1999"], prompts=[])
-    judge = ScriptedLLM(answers=["YES", "NO\nsince 1999"], prompts=[])
+    judge = ScriptedLLM(answers=["YES", "YES", "YES", "YES", "YES", "NO\ngridflow since 1999"],
+                        prompts=[])
     good, bad = ev.evaluate_facts("amara", amara_index, profile, runs=2, llm=llm,
                                   judge_llm=judge)
     assert good.checks["format"] and good.checks["numbers"] and good.checks["judge"]
@@ -110,7 +152,10 @@ def test_scorecard_table_and_failures(amara_index):
         ev.Result("amara", "facts", "facts run 1", "x", False, "judge: no", 10.0,
                   checks={"format": True, "numbers": True, "used_job": False, "judge": False}),
     ]
+    results[2].sections = ["skills", "education"]
     report = ev.scorecard(results, "baseline", "LLM: fake")
+    assert "| Facts: judge reply unclear (not counted) | 0/1 | 0/1 |" in report
+    assert "Sections: skills, education" in report
     assert "| Answerable questions correct | 1/1 | 1/1 |" in report
     assert "| Unanswerable → \"I don't know.\" | 0/1 | 0/1 |" in report
     assert "| Facts: a job was in the context | 0/1 | 0/1 |" in report
@@ -135,3 +180,22 @@ def test_expected_words_are_really_in_the_profiles():
         for item in q["answerable"] + [i for i in q["qualifiers"]
                                        if not isinstance(i["expect"][0], list)]:
             assert ev.matches(text, item["expect"]), (name, item)
+
+
+def test_rejudge_replaces_only_the_judge_verdict():
+    profiles = {"amara": load_profile(CONTACTS_DIR / "amara_okafor.json")}
+    old = ev.Result("amara", "facts", "facts run 1", GOOD_FACTS, False,
+                    "text before fact 1; judge: old verdict",
+                    checks={"format": False, "numbers": True, "used_job": True, "judge": False})
+    answer = ev.Result("amara", "answerable", "Job?", "Lead", True)
+    ev.rejudge([old, answer], profiles, ScriptedLLM(answers=["YES"], prompts=[]))
+    assert old.checks["judge"] is True
+    assert old.detail == "text before fact 1"   # rule checks are kept
+    assert old.passed is False
+    assert answer.passed is True                # answers are untouched
+
+
+def test_results_round_trip(tmp_path):
+    results = [ev.Result("amara", "facts", "run", "text", True, checks={"judge": None})]
+    ev.save_results(results, tmp_path / "r.json")
+    assert ev.load_results(tmp_path / "r.json") == results

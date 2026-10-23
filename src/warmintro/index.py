@@ -50,9 +50,13 @@ def profile_to_texts(profile: Profile) -> list[tuple[str, str]]:
     )))
 
     for job in profile.experiences:
-        verb = "works" if job.starts_at and not job.ends_at else "worked"
+        current = bool(job.starts_at) and not job.ends_at
+        verb = "works" if current else "worked"
         where = f" in {job.location}" if job.location else ""
+        # The label gives questions like "current job title?" words to match:
+        # in the baseline, such questions sometimes missed the job chunk.
         texts.append(("experience", _sentence(
+            f"{'Current job' if current else 'Past job'}: "
             f"{name} {verb} as {job.title} at {job.company}{where}"
             f"{_period(job.starts_at, job.ends_at)}.",
             job.description,

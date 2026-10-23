@@ -18,9 +18,10 @@ CHUNK_SIZE = 400       # tokens per chunk, not characters
 # chunks repeated half of the previous one.
 CHUNK_OVERLAP = 40
 SIMILARITY_TOP_K = 4   # chunks retrieved per question
-# The facts request is broad ("career or education"), so it gets more of the
-# profile. A whole sample profile is about 13 short chunks.
-FACTS_TOP_K = 8
+# Facts read the whole profile instead of retrieving for a vague request: in
+# the baseline scorecard, the top 8 chunks held no job in 6 of 9 runs. A
+# sample profile is about 13 short chunks; very long profiles are capped.
+FACTS_MAX_CHUNKS = 30
 FACTS_QUERY = "Provide three interesting facts about this person's career or education."
 
 # Gemini embeddings are cut to this size so they match Granite's 768.
@@ -110,17 +111,30 @@ ANSWER_GENERATION = Generation(max_new_tokens=250, decoding_method="greedy")
 # Prompt templates. LlamaIndex fills {context_str} with the retrieved profile
 # chunks and {query_str} with the request or the user's question.
 INITIAL_FACTS_TEMPLATE = """You help someone prepare for a first conversation at a networking event.
-Below is information from a person's professional profile.
+Below is a person's professional profile.
 ---------------------
 {context_str}
 ---------------------
-Using only the profile information above, write three interesting facts about
-this person's career or education. After each fact, add one friendly question
-that could start a conversation about it.
+Write three interesting facts about this person's career or education, taken
+only from the profile above. After each fact, write one friendly question to
+ask the person about it.
 
 Rules:
-- Use only facts stated in the profile. Do not guess or add details.
-- Number the facts 1, 2 and 3.
+- Start your reply with "1." Write no introduction and no closing line.
+- Each fact is one sentence that states only what the profile says. Copy
+  names, dates and numbers exactly as written; never add new ones.
+- Do not add opinions or explanations, such as why a fact is impressive.
+- Take the facts from different parts of the profile, and include at least
+  one job if the profile lists any.
+- Write each question to the person, using "you".
+
+Use exactly this layout:
+1. <fact>
+   Question: <question>
+2. <fact>
+   Question: <question>
+3. <fact>
+   Question: <question>
 
 Request: {query_str}
 Answer:"""
@@ -130,8 +144,14 @@ USER_QUESTION_TEMPLATE = """You answer questions about a person, using their pro
 {context_str}
 ---------------------
 Answer the question using only the profile information above.
-If the profile does not contain the answer, reply exactly: I don't know.
-Keep the answer to one to three sentences.
+
+Rules:
+- If the profile does not contain the answer, reply exactly: I don't know.
+- Keep details exactly as the profile gives them, such as "basic" or
+  "intermediate" for a language, dates, and whether a job is current or past.
+- If the question asks for an opinion or a guess, give only the related facts
+  from the profile.
+- Keep the answer to one to three sentences.
 
 Question: {query_str}
 Answer:"""

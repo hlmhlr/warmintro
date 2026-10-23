@@ -2,7 +2,7 @@ import pytest
 
 import warmintro.query as query
 from fakes import KeywordEmbedding, ScriptedLLM
-from warmintro.config import ANSWER_GENERATION, FACTS_GENERATION, FACTS_TOP_K, SIMILARITY_TOP_K
+from warmintro.config import ANSWER_GENERATION, FACTS_GENERATION, SIMILARITY_TOP_K
 from warmintro.index import build_profile_index
 from warmintro.profiles import CONTACTS_DIR, load_profile
 
@@ -18,14 +18,16 @@ def index(embed):
         {"them": load_profile(CONTACTS_DIR / "amara_okafor.json")}, embed_model=embed)
 
 
-def test_facts_use_the_facts_template_and_more_chunks(index):
+def test_facts_use_the_facts_template_and_the_whole_profile(index):
     llm = ScriptedLLM(answers=["1. Fact one.\n2. Fact two.\n3. Fact three."], prompts=[])
     answer = query.generate_initial_facts(index, llm=llm)
     assert answer.text.startswith("1. Fact one.")
     assert len(llm.prompts) == 1
     assert "networking event" in llm.prompts[0]
     assert "career or education" in llm.prompts[0]
-    assert len(answer.sources) == FACTS_TOP_K
+    # Every chunk, so the jobs are always there (baseline: no job in 6 of 9 runs).
+    assert len(answer.sources) == len(index.index_struct.nodes_dict)
+    assert "experience" in answer.sections
 
 
 def test_answer_uses_the_question_template_and_reports_sources(index):
@@ -80,3 +82,9 @@ def test_each_task_gets_its_own_settings_and_model(index, monkeypatch, function,
     args = (index,) if function is query.generate_initial_facts else (index, "Hi?")
     function(*args, model="granite4:micro-h")
     assert calls == [(generation, "granite4:micro-h")]
+
+
+def test_facts_are_capped_for_very_long_profiles(index, monkeypatch):
+    monkeypatch.setattr(query, "FACTS_MAX_CHUNKS", 5)
+    answer = query.generate_initial_facts(index, llm=ScriptedLLM(prompts=[]))
+    assert len(answer.sources) == 5

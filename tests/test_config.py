@@ -57,3 +57,17 @@ def test_templates_have_llamaindex_slots(template):
 
 def test_question_template_admits_missing_answers():
     assert "I don't know" in config.USER_QUESTION_TEMPLATE
+
+
+def test_facts_template_rules_from_the_baseline():
+    t = config.INITIAL_FACTS_TEMPLATE
+    assert 'Start your reply with "1."' in t          # 6/9 baseline runs had an intro
+    assert "never add new ones" in t                  # invented dates
+    assert "Do not add opinions" in t                 # "demonstrating her dedication..."
+    assert "include at least" in t and "one job" in t
+    assert t.count("Question: <question>") == 3       # one fixed layout
+
+
+def test_question_template_keeps_qualifiers():
+    assert '"basic"' in config.USER_QUESTION_TEMPLATE  # "basic" Italian was dropped
+    assert "current or past" in config.USER_QUESTION_TEMPLATE

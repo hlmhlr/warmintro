@@ -17,7 +17,7 @@ from warmintro.config import (
     ANSWER_GENERATION,
     FACTS_GENERATION,
     FACTS_QUERY,
-    FACTS_TOP_K,
+    FACTS_MAX_CHUNKS,
     INITIAL_FACTS_TEMPLATE,
     SIMILARITY_TOP_K,
     USER_QUESTION_TEMPLATE,
@@ -70,9 +70,15 @@ def _ask(index: VectorStoreIndex, query: str, template: str, top_k: int, llm: LL
 def generate_initial_facts(
     index: VectorStoreIndex, llm: LLM | None = None, model: str | None = None
 ) -> Answer:
-    """Three interesting facts, each with a conversation-starter question."""
+    """Three interesting facts, each with a conversation-starter question.
+
+    Uses every chunk of the profile (up to FACTS_MAX_CHUNKS), so the facts can
+    draw on jobs, education and the rest. The lab retrieved the top 7 for a
+    vague request, which often left the jobs out.
+    """
     llm = llm or get_llm(FACTS_GENERATION, model=model)
-    return _ask(index, FACTS_QUERY, INITIAL_FACTS_TEMPLATE, FACTS_TOP_K, llm)
+    all_chunks = min(len(index.index_struct.nodes_dict), FACTS_MAX_CHUNKS)
+    return _ask(index, FACTS_QUERY, INITIAL_FACTS_TEMPLATE, all_chunks, llm)
 
 
 def answer_user_query(

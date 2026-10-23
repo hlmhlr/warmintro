@@ -29,9 +29,9 @@ def test_sections_are_readable_sentences(amara):
     texts = dict((s, t) for s, t in profile_to_texts(amara) if s != "experience")
     assert texts["skills"].startswith("Skills of Amara Okafor: Apache Kafka, Python")
     jobs = [t for s, t in profile_to_texts(amara) if s == "experience"]
-    assert jobs[0].startswith("Amara Okafor works as Data Engineering Lead at "
+    assert jobs[0].startswith("Current job: Amara Okafor works as Data Engineering Lead at "
                               "Brightwind Grid in Rotterdam, Netherlands from 2022-04 to present.")
-    assert jobs[1].startswith("Amara Okafor worked as Senior Data Engineer")
+    assert jobs[1].startswith("Past job: Amara Okafor worked as Senior Data Engineer")
     certs = dict(profile_to_texts(amara))["certifications"]
     assert "(Cloud Native Foundation, 2023)" in certs
 
