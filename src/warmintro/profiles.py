@@ -7,6 +7,7 @@ pastes in. Contact details are always dropped.
 """
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,25 @@ UNWANTED_KEYS = {"people_also_viewed", "similarly_named_profiles",
                  "profile_pic_url", "background_cover_image_url"}
 CONTACT_KEYS = {"personal_emails", "personal_numbers", "email", "phone",
                 "inferred_salary"}
+
+
+MAX_PASTE_CHARS = 8000  # longer pastes are refused (cost and memory on a free server)
+
+EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+PHONE = re.compile(r"\+?\d[\d\s().-]{7,}\d")
+
+
+def scrub_contact_details(text: str) -> str:
+    """Remove email addresses and phone numbers from free text.
+
+    Key-based cleaning can't see contact details written inside a summary or
+    a pasted bio. A phone number needs 9+ digits, so years and dates such as
+    "2017-09" are kept.
+    """
+    text = EMAIL.sub("[removed]", text)
+    return PHONE.sub(
+        lambda m: "[removed]" if sum(c.isdigit() for c in m.group()) >= 9 else m.group(),
+        text)
 
 
 class _Part(BaseModel):
@@ -112,7 +132,7 @@ def clean_profile_data(raw: Any) -> Any:
         items = [clean_profile_data(item) for item in raw]
         return [item for item in items if not _is_empty(item)]
     if isinstance(raw, str):
-        return raw.strip()
+        return scrub_contact_details(raw.strip())
     return raw
 
 
@@ -130,3 +150,29 @@ def load_profile(path: str | Path) -> Profile:
 def list_profiles(folder: Path = CONTACTS_DIR) -> dict[str, Path]:
     """Profile files in a folder, keyed by file name without .json."""
     return {path.stem: path for path in sorted(folder.glob("*.json"))}
+
+
+def parse_pasted_profile(text: str, default_name: str = "This person") -> Profile:
+    """A profile pasted in the web app: JSON in this repo's format, or plain text.
+
+    Plain text (a speaker bio, an "About" section) becomes the summary of a
+    profile named `default_name`.
+    """
+    text = (text or "").strip()
+    if not text:
+        raise ValueError("Paste a profile first.")
+    if len(text) > MAX_PASTE_CHARS:
+        raise ValueError(f"The profile is too long ({len(text)} characters). "
+                         f"Please keep it under {MAX_PASTE_CHARS}.")
+    if text.startswith("{"):
+        try:
+            raw = json.loads(text)
+        except json.JSONDecodeError as error:
+            raise ValueError(f"The JSON could not be read (line {error.lineno}). "
+                             "Fix it, or paste plain text instead.") from None
+        try:
+            return parse_profile(raw)
+        except ValueError:  # pydantic's ValidationError is a ValueError
+            raise ValueError('The JSON needs at least a "full_name" field. '
+                             "See data/profiles for examples.") from None
+    return parse_profile({"full_name": default_name, "summary": text})

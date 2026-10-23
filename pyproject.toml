@@ -11,6 +11,7 @@ dependencies = [
     "llama-index-embeddings-ollama>=0.10",
     "pydantic>=2.0",
     "python-dotenv>=1.0",
+    "gradio>=6.30",
 ]
 
 [project.scripts]
