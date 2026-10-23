@@ -39,3 +39,4 @@ link-mode = "copy"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["tests"]  # lets tests import fakes.py

@@ -14,6 +14,9 @@ EMBEDDINGS_PROVIDERS = ("ollama", "huggingface", "gemini")
 
 # Retrieval settings (the lab's CHUNK_SIZE and SIMILARITY_TOP_K).
 CHUNK_SIZE = 400       # tokens per chunk, not characters
+# The lab kept SentenceSplitter's default overlap of 200 tokens, so long
+# chunks repeated half of the previous one.
+CHUNK_OVERLAP = 40
 SIMILARITY_TOP_K = 4   # chunks retrieved per question
 
 # Gemini embeddings are cut to this size so they match Granite's 768.
