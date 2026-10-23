@@ -1,0 +1,62 @@
+{
+  "full_name": "Sofia Marchetti",
+  "headline": "Machine Learning Engineer at Corvo Robotics | Computer vision for farm robots",
+  "city": "Bologna",
+  "country": "Italy",
+  "summary": "I teach robots to tell a ripe tomato from a green one. My work sits between research and production: I take vision models from papers and make them run on small, cheap hardware in muddy fields.",
+  "experiences": [
+    {
+      "title": "Machine Learning Engineer",
+      "company": "Corvo Robotics",
+      "location": "Bologna, Italy",
+      "starts_at": "2021-10",
+      "ends_at": null,
+      "description": "Builds the fruit-detection models for a harvesting robot. Shrank the main model to run at 15 frames per second on an embedded board without losing accuracy."
+    },
+    {
+      "title": "Research Intern",
+      "company": "Lumen AI Lab",
+      "location": "Zurich, Switzerland",
+      "starts_at": "2020-06",
+      "ends_at": "2020-12",
+      "description": "Worked on data-efficient object detection with synthetic images."
+    }
+  ],
+  "education": [
+    {
+      "school": "Emilia Polytechnic",
+      "degree_name": "PhD",
+      "field_of_study": "Computer Vision",
+      "starts_at": "2017",
+      "ends_at": "2021",
+      "description": "Thesis: detecting small objects in cluttered outdoor scenes."
+    },
+    {
+      "school": "Emilia Polytechnic",
+      "degree_name": "MSc",
+      "field_of_study": "Computer Engineering",
+      "starts_at": "2015",
+      "ends_at": "2017"
+    }
+  ],
+  "skills": ["PyTorch", "Object detection", "Model compression", "ONNX", "Edge deployment"],
+  "languages": ["Italian", "English", "German (intermediate)"],
+  "volunteer_work": [
+    {
+      "role": "Volunteer instructor",
+      "organization": "RoboKids Bologna",
+      "cause": "Education",
+      "description": "Runs Saturday robotics and coding workshops for children aged 9 to 13."
+    }
+  ],
+  "projects": [
+    {
+      "title": "Orchard-Mini dataset",
+      "description": "Released a public dataset of 6,000 labelled fruit images from orchards."
+    }
+  ],
+  "awards": [
+    {"title": "Best Student Paper", "issuer": "European Agri-Robotics Workshop", "year": "2020"}
+  ],
+  "interests": ["Sailing", "Film photography", "Making pasta from scratch"]
+}

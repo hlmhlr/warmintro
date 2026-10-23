@@ -1,0 +1,51 @@
+{
+  "full_name": "Sam Lindqvist",
+  "headline": "Healthcare Data Analyst | Former music teacher",
+  "city": "Graz",
+  "country": "Austria",
+  "summary": "I taught music in secondary schools for six years, then retrained in data analysis. I now analyse patient-flow data for a hospital group and still play cello on weekends.",
+  "experiences": [
+    {
+      "title": "Data Analyst",
+      "company": "Styria Hospital Group",
+      "location": "Graz, Austria",
+      "starts_at": "2023-05",
+      "ends_at": null,
+      "description": "Analyses waiting times and bed occupancy. Built a dashboard that nurses use to plan discharges."
+    },
+    {
+      "title": "Music Teacher",
+      "company": "Graz Secondary School 4",
+      "location": "Graz, Austria",
+      "starts_at": "2016-09",
+      "ends_at": "2022-07",
+      "description": "Taught music and led the school orchestra."
+    }
+  ],
+  "education": [
+    {
+      "school": "Altstadt Conservatory of Music",
+      "degree_name": "Bachelor of Music Education",
+      "starts_at": "2012",
+      "ends_at": "2016"
+    },
+    {
+      "school": "Online",
+      "degree_name": "Professional Certificate",
+      "field_of_study": "Data Analytics",
+      "starts_at": "2022",
+      "ends_at": "2023"
+    }
+  ],
+  "skills": ["SQL", "Python", "Power BI", "Healthcare data", "Teaching"],
+  "languages": ["German", "Swedish", "English"],
+  "volunteer_work": [
+    {
+      "role": "Assistant",
+      "organization": "Graz Girls Who Code",
+      "cause": "Education",
+      "description": "Helps run an after-school coding club."
+    }
+  ],
+  "interests": ["Cello in an amateur orchestra", "Hiking", "Board games"]
+}

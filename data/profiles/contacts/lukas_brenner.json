@@ -1,0 +1,67 @@
+{
+  "full_name": "Lukas Brenner",
+  "headline": "Product Manager at Tandem Health | Former cellist, former UX researcher",
+  "city": "Vienna",
+  "country": "Austria",
+  "summary": "I played cello professionally for eight years before moving into user research and then product. Today I lead the patient app at Tandem Health, which helps people with chronic conditions share symptoms with their care team. Listening is still the core of my job.",
+  "experiences": [
+    {
+      "title": "Product Manager, Patient App",
+      "company": "Tandem Health",
+      "location": "Vienna, Austria",
+      "starts_at": "2023-01",
+      "ends_at": null,
+      "description": "Owns the patient app used by about 40,000 people. Introduced a weekly symptom check-in that doubled the share of patients who send data before appointments."
+    },
+    {
+      "title": "UX Researcher",
+      "company": "Tandem Health",
+      "location": "Vienna, Austria",
+      "starts_at": "2020-03",
+      "ends_at": "2022-12",
+      "description": "Ran interviews and diary studies with patients and nurses. Built the company's research repository."
+    },
+    {
+      "title": "Cellist",
+      "company": "Vienna Chamber Philharmonic",
+      "location": "Vienna, Austria",
+      "starts_at": "2011-09",
+      "ends_at": "2019-08",
+      "description": "Section cellist. Toured in 14 countries and recorded three albums."
+    }
+  ],
+  "education": [
+    {
+      "school": "Altstadt Conservatory of Music",
+      "degree_name": "Master of Music",
+      "field_of_study": "Cello Performance",
+      "starts_at": "2006",
+      "ends_at": "2011"
+    },
+    {
+      "school": "Online",
+      "degree_name": "Certificate",
+      "field_of_study": "Human-Computer Interaction",
+      "starts_at": "2019",
+      "ends_at": "2020",
+      "description": "Evening course taken while leaving the orchestra."
+    }
+  ],
+  "skills": ["Product discovery", "User interviews", "Roadmapping", "Healthcare compliance", "Figma"],
+  "languages": ["German", "English", "Italian (basic)"],
+  "volunteer_work": [
+    {
+      "role": "Cello teacher",
+      "organization": "Music for Every Kid Vienna",
+      "cause": "Arts and culture",
+      "description": "Teaches free weekly cello lessons to children from low-income families."
+    }
+  ],
+  "projects": [
+    {
+      "title": "From Stage to Standup (talk)",
+      "description": "Conference talk on what orchestra rehearsals teach about product teams."
+    }
+  ],
+  "interests": ["Chamber music", "Alpine hiking", "Board games"]
+}

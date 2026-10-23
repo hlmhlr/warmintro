@@ -1,0 +1,78 @@
+{
+  "full_name": "Amara Okafor",
+  "headline": "Data Engineering Lead at Brightwind Grid | Streaming pipelines for renewable energy",
+  "city": "Rotterdam",
+  "country": "Netherlands",
+  "profile_pic_url": "https://example.com/photos/amara.jpg",
+  "personal_emails": ["amara.okafor@example.com"],
+  "follower_count": 2140,
+  "summary": "I build the data pipelines that tell a wind farm operator, every few seconds, how much power the grid can take. Before energy I worked on payments data in Lagos. I care about simple, well-tested pipelines and about bringing more women into data engineering.",
+  "experiences": [
+    {
+      "title": "Data Engineering Lead",
+      "company": "Brightwind Grid",
+      "location": "Rotterdam, Netherlands",
+      "starts_at": "2022-04",
+      "ends_at": null,
+      "description": "Leads a team of six engineers. Moved turbine telemetry from nightly batch jobs to a streaming pipeline that updates grid forecasts every 10 seconds, which cut curtailment losses by about 8%."
+    },
+    {
+      "title": "Senior Data Engineer",
+      "company": "Paystream Africa",
+      "location": "Lagos, Nigeria",
+      "starts_at": "2017-09",
+      "ends_at": "2022-03",
+      "description": "Built the fraud-detection data platform for card payments across four countries. Started the company's internal data engineering guild."
+    },
+    {
+      "title": "Junior Developer",
+      "company": "Kola Software",
+      "location": "Lagos, Nigeria",
+      "starts_at": "2015-06",
+      "ends_at": "2017-08",
+      "description": ""
+    }
+  ],
+  "education": [
+    {
+      "school": "Westmere Technical University",
+      "degree_name": "MSc",
+      "field_of_study": "Sustainable Energy Systems",
+      "starts_at": "2020",
+      "ends_at": "2022",
+      "description": "Part-time while working. Thesis on forecasting wind power with gradient-boosted trees."
+    },
+    {
+      "school": "University of Lagos",
+      "degree_name": "BSc",
+      "field_of_study": "Computer Science",
+      "starts_at": "2011",
+      "ends_at": "2015"
+    }
+  ],
+  "skills": ["Apache Kafka", "Python", "SQL", "dbt", "Time-series forecasting", "Team leadership"],
+  "languages": ["English", "Yoruba", "Dutch (intermediate)"],
+  "certifications": [
+    {"name": "Certified Kubernetes Application Developer", "authority": "Cloud Native Foundation", "year": "2023"}
+  ],
+  "volunteer_work": [
+    {
+      "role": "Mentor",
+      "organization": "Women in Data Rotterdam",
+      "cause": "Education",
+      "description": "Mentors career switchers moving into data engineering, four mentees a year."
+    }
+  ],
+  "projects": [
+    {
+      "title": "gridflow (open source)",
+      "description": "Maintainer of a small Python library that cleans and resamples turbine sensor data. Used by three energy start-ups."
+    }
+  ],
+  "awards": [
+    {"title": "Speaker, Rotterdam Data Days", "issuer": "Rotterdam Data Days", "year": "2024"}
+  ],
+  "interests": ["Marathon running (finished Rotterdam Marathon twice)", "Nigerian cooking", "Open source"],
+  "people_also_viewed": [],
+  "groups": ""
+}

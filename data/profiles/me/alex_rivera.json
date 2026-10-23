@@ -1,0 +1,51 @@
+{
+  "full_name": "Alex Rivera",
+  "headline": "Junior ML Engineer | Building RAG apps with open models",
+  "city": "Utrecht",
+  "country": "Netherlands",
+  "summary": "I moved from data analysis into machine learning engineering and now build retrieval-augmented generation apps that run on local, open models. I like small tools that solve one real problem well.",
+  "experiences": [
+    {
+      "title": "Junior ML Engineer",
+      "company": "Canal Insights",
+      "location": "Utrecht, Netherlands",
+      "starts_at": "2024-09",
+      "ends_at": null,
+      "description": "Builds internal question-answering tools over company documents. Moved two prototypes from notebooks into tested Python packages."
+    },
+    {
+      "title": "Data Analyst",
+      "company": "Canal Insights",
+      "location": "Utrecht, Netherlands",
+      "starts_at": "2022-07",
+      "ends_at": "2024-08",
+      "description": "Built sales dashboards and automated weekly reports."
+    }
+  ],
+  "education": [
+    {
+      "school": "Westmere Technical University",
+      "degree_name": "MSc",
+      "field_of_study": "Data Science",
+      "starts_at": "2020",
+      "ends_at": "2022"
+    }
+  ],
+  "skills": ["Python", "LlamaIndex", "LangChain", "SQL", "Computer vision basics"],
+  "languages": ["Spanish", "English", "Dutch (beginner)"],
+  "volunteer_work": [
+    {
+      "role": "Coach",
+      "organization": "CoderDojo Utrecht",
+      "cause": "Education",
+      "description": "Helps teenagers build their first Python games once a month."
+    }
+  ],
+  "projects": [
+    {
+      "title": "warmintro",
+      "description": "An app that writes conversation starters from professional profiles."
+    }
+  ],
+  "interests": ["Half marathons", "Learning Dutch", "Sci-fi novels"]
+}
